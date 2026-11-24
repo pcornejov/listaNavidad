@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "lista-navidad",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "lista-navidad",
+      "database_id": "5f74b77d-f2ad-4ca3-bf20-d12a2ee47ff7",
+      "migrations_dir": "migrations"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+// Configuración de despliegue: el Worker incluye la página (ver scripts/embed.mjs).
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "lista-navidad",
+  "main": "worker/embedded.ts",
+  "compatibility_date": "2026-11-01",
+  "workers_dev": true,
+  "preview_urls": false,
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "lista-navidad",
+      "database_id": "5f74b77d-f2ad-4ca3-bf20-d12a2ee47ff7",
+      "migrations_dir": "migrations"
+    }
+  ]
+}

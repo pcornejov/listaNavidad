@@ -1,0 +1,29 @@
+{
+  "name": "lista-navidad",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "npm run build && vite preview",
+    "deploy": "npm run build && node scripts/embed.mjs && wrangler deploy -c wrangler.deploy.jsonc",
+    "db:migrate:local": "wrangler d1 migrations apply lista-navidad --local",
+    "db:migrate:remote": "wrangler d1 migrations apply lista-navidad --remote -c wrangler.deploy.jsonc",
+    "cf-typegen": "wrangler types"
+  },
+  "dependencies": {
+    "hono": "^4.13.21",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.70.1",
+    "@cloudflare/workers-types": "^5.20261123.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "wrangler": "^4.167.0"
+  }
+}
