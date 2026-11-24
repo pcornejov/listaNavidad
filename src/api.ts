@@ -48,6 +48,8 @@ export interface ItemInput {
 
 export const api = {
   people: () => req<Person[]>("/people"),
+  me: () => req<Me>("/me"),
+  logout: () => req("/logout", { method: "POST" }),
   enter: (name: string) => req<Me>("/people", { method: "POST", body: JSON.stringify({ name }) }),
   ownList: (id: number) => req<{ owner: Me; items: OwnItem[] }>(`/people/${id}/items`),
   otherList: (id: number) => req<{ owner: Me; items: OtherItem[] }>(`/people/${id}/items`),

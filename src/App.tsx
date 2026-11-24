@@ -87,7 +87,27 @@ function Garland() {
 
 export default function App() {
   const [me, setMe] = useState<Me | null>(loadMe);
+  const [checking, setChecking] = useState(true);
   const route = useRoute();
+
+  // Recupera la sesión desde la cookie del servidor (por si el navegador borró su memoria)
+  // y la renueva.
+  useEffect(() => {
+    api
+      .me()
+      .then((p) => {
+        saveMe(p);
+        setMe(p);
+      })
+      .catch((e: Error) => {
+        // Solo cerramos sesión si el servidor dice que no hay; un fallo de red no.
+        if (e.message === "Sin sesión") {
+          saveMe(null);
+          setMe(null);
+        }
+      })
+      .finally(() => setChecking(false));
+  }, []);
 
   const enter = (p: Me) => {
     saveMe(p);
@@ -95,10 +115,12 @@ export default function App() {
     go("/");
   };
   const leave = () => {
+    api.logout().catch(() => {});
     saveMe(null);
     setMe(null);
   };
 
+  if (!me && checking) return <Snow />;
   if (!me)
     return (
       <>
@@ -140,21 +162,20 @@ export default function App() {
 // ---------- Entrar con el nombre ----------
 
 function Login({ onEnter }: { onEnter: (me: Me) => void }) {
-  const [people, setPeople] = useState<Person[]>([]);
   const [name, setName] = useState("");
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    api.people().then(setPeople).catch(() => {});
-  }, []);
+  const [busy, setBusy] = useState(false);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
+    setBusy(true);
     try {
       onEnter(await api.enter(name));
     } catch (err) {
       setError((err as Error).message);
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -164,31 +185,21 @@ function Login({ onEnter }: { onEnter: (me: Me) => void }) {
         <div className="big-emoji">🎅</div>
         <h1 className="title">Lista de Navidad</h1>
         <p className="tagline">Pide, regala y comparte la magia ✨</p>
-        {people.length > 0 && (
-          <>
-            <p>¿Quién eres?</p>
-            <div className="names">
-              {people.map((p) => (
-                <button key={p.id} className="name-btn" onClick={() => onEnter(p)}>
-                  {p.name}
-                </button>
-              ))}
-            </div>
-            <p className="muted">¿No apareces? Escribe tu nombre:</p>
-          </>
-        )}
-        {people.length === 0 && <p>Escribe tu nombre para empezar:</p>}
+        <p>Escribe tu nombre para entrar:</p>
         <form onSubmit={submit} className="row">
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Tu nombre"
             maxLength={40}
+            autoComplete="given-name"
+            autoCapitalize="words"
           />
-          <button className="primary" disabled={!name.trim()}>
+          <button className="primary" disabled={busy || !name.trim()}>
             Entrar
           </button>
         </form>
+        <p className="muted small">Usa siempre el mismo nombre. Este teléfono te recordará.</p>
         {error && <p className="error">{error}</p>}
       </div>
     </div>

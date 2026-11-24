@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import type { Context } from "hono";
+import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import type { MyGift, OtherItem, OwnItem, Person } from "../shared/types";
 
 type Env = { DB: D1Database };
@@ -10,9 +11,22 @@ const app = new Hono<{ Bindings: Env }>().basePath("/api");
 const clean = (v: unknown, max: number) =>
   typeof v === "string" ? v.trim().slice(0, max) : "";
 
-/** Identifica a quien usa la app (se guarda en el navegador al elegir el nombre). */
+const COOKIE = "ln_me";
+
+/** Recuerda a la persona en este dispositivo por un año. */
+function rememberPerson(c: Ctx, id: number) {
+  setCookie(c, COOKIE, String(id), {
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+    httpOnly: true,
+    secure: new URL(c.req.url).protocol === "https:",
+    sameSite: "Lax",
+  });
+}
+
+/** Identifica a quien usa la app: cookie del servidor o, si no, el id guardado en el navegador. */
 async function currentPerson(c: Ctx): Promise<number | null> {
-  const id = Number(c.req.header("X-Person-Id"));
+  const id = Number(getCookie(c, COOKIE) ?? c.req.header("X-Person-Id"));
   if (!Number.isInteger(id) || id <= 0) return null;
   const row = await c.env.DB.prepare("SELECT id FROM people WHERE id = ?").bind(id).first();
   return row ? id : null;
@@ -51,12 +65,30 @@ app.post("/people", async (c) => {
     c.env.DB.prepare("SELECT id, name FROM people WHERE name_key = ?")
       .bind(key)
       .first<{ id: number; name: string }>();
-  const existing = await find();
-  if (existing) return c.json(existing);
-  await c.env.DB.prepare("INSERT INTO people (name, name_key) VALUES (?, ?) ON CONFLICT DO NOTHING")
-    .bind(prettyName(name), key)
-    .run();
-  return c.json(await find());
+  let person = await find();
+  if (!person) {
+    await c.env.DB.prepare("INSERT INTO people (name, name_key) VALUES (?, ?) ON CONFLICT DO NOTHING")
+      .bind(prettyName(name), key)
+      .run();
+    person = await find();
+  }
+  if (person) rememberPerson(c, person.id);
+  return c.json(person);
+});
+
+/** ¿Quién soy en este dispositivo? */
+app.get("/me", async (c) => {
+  const id = await currentPerson(c);
+  if (!id) return c.json({ error: "Sin sesión" }, 401);
+  rememberPerson(c, id); // renueva la cookie (y la crea si solo venía el id del navegador)
+  return c.json(
+    await c.env.DB.prepare("SELECT id, name FROM people WHERE id = ?").bind(id).first()
+  );
+});
+
+app.post("/logout", (c) => {
+  deleteCookie(c, COOKIE, { path: "/" });
+  return c.json({ ok: true });
 });
 
 /** Lista de una persona. Si la mira el dueño, no se incluye nada sobre regalos. */
