@@ -171,7 +171,9 @@ function Login({ onEnter }: { onEnter: (me: Me) => void }) {
     setError("");
     setBusy(true);
     try {
-      onEnter(await api.enter(name));
+      const p = await api.enter(name);
+      if (!p?.id) throw new Error("No pudimos entrar. Prueba de nuevo.");
+      onEnter(p);
     } catch (err) {
       setError((err as Error).message);
     } finally {

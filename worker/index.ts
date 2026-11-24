@@ -67,12 +67,24 @@ app.post("/people", async (c) => {
       .first<{ id: number; name: string }>();
   let person = await find();
   if (!person) {
+    // Personas antiguas sin name_key: se buscan por nombre normalizado y se reparan.
+    const { results } = await c.env.DB.prepare(
+      "SELECT id, name FROM people WHERE name_key IS NULL"
+    ).all<{ id: number; name: string }>();
+    const legacy = results.find((r) => nameKey(r.name) === key);
+    if (legacy) {
+      await c.env.DB.prepare("UPDATE people SET name_key = ? WHERE id = ?").bind(key, legacy.id).run();
+      person = legacy;
+    }
+  }
+  if (!person) {
     await c.env.DB.prepare("INSERT INTO people (name, name_key) VALUES (?, ?) ON CONFLICT DO NOTHING")
       .bind(prettyName(name), key)
       .run();
     person = await find();
   }
-  if (person) rememberPerson(c, person.id);
+  if (!person) return c.json({ error: "No pudimos entrar con ese nombre. Prueba de nuevo." }, 500);
+  rememberPerson(c, person.id);
   return c.json(person);
 });
 
