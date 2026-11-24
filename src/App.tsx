@@ -42,6 +42,47 @@ function useRefreshOnFocus(fn: () => void) {
   }, [fn]);
 }
 
+// ---------- Decoración ----------
+
+const FLAKES = Array.from({ length: 28 }, (_, i) => ({
+  left: (i * 37) % 100,
+  size: 0.6 + ((i * 7) % 10) / 10,
+  duration: 9 + ((i * 13) % 12),
+  delay: -((i * 17) % 20),
+  drift: ((i % 5) - 2) * 12,
+}));
+
+function Snow() {
+  return (
+    <div className="snow" aria-hidden="true">
+      {FLAKES.map((f, i) => (
+        <span
+          key={i}
+          style={{
+            left: `${f.left}%`,
+            fontSize: `${f.size}rem`,
+            animationDuration: `${f.duration}s`,
+            animationDelay: `${f.delay}s`,
+            ["--drift" as string]: `${f.drift}px`,
+          }}
+        >
+          ❄
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function Garland() {
+  return (
+    <div className="garland" aria-hidden="true">
+      {Array.from({ length: 24 }, (_, i) => (
+        <i key={i} />
+      ))}
+    </div>
+  );
+}
+
 // ---------- App ----------
 
 export default function App() {
@@ -58,11 +99,19 @@ export default function App() {
     setMe(null);
   };
 
-  if (!me) return <Login onEnter={enter} />;
+  if (!me)
+    return (
+      <>
+        <Snow />
+        <Login onEnter={enter} />
+      </>
+    );
 
   return (
-    <div className="page">
+    <>
+      <Snow />
       <header className="top">
+        <div className="top-inner">
         <a href="#/" className="brand">
           🎄 Lista de Navidad
         </a>
@@ -74,14 +123,17 @@ export default function App() {
             No soy yo
           </button>
         </div>
+        </div>
+        <Garland />
       </header>
-      <main>
+      <main className="page">
         {route.view === "home" && <Home me={me} />}
         {route.view === "mine" && <MyList me={me} />}
         {route.view === "person" &&
           (route.id === me.id ? <MyList me={me} /> : <PersonList id={route.id} />)}
       </main>
-    </div>
+      <footer className="foot">🎄 ¡Feliz Navidad! 🎁</footer>
+    </>
   );
 }
 
@@ -110,7 +162,8 @@ function Login({ onEnter }: { onEnter: (me: Me) => void }) {
     <div className="login">
       <div className="card login-card">
         <div className="big-emoji">🎅</div>
-        <h1>Lista de Navidad</h1>
+        <h1 className="title">Lista de Navidad</h1>
+        <p className="tagline">Pide, regala y comparte la magia ✨</p>
         {people.length > 0 && (
           <>
             <p>¿Quién eres?</p>

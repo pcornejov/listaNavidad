@@ -1,30 +1,44 @@
+/* ===== Paleta navideña clásica ===== */
 :root {
-  --bg: #fbf6ef;
+  --red: #b3202a;
+  --red-dark: #8c1820;
+  --green: #14532d;
+  --green-mid: #1f7a45;
+  --green-soft: #e3f1e7;
+  --gold: #d4a017;
+  --gold-soft: #fbf0cf;
+  --gold-text: #8a6300;
+
+  --bg: #fdf8ef;
   --card: #ffffff;
-  --text: #2b2420;
-  --muted: #7d726a;
-  --border: #eadfd3;
-  --red: #c0392b;
-  --red-dark: #9e2b20;
-  --green: #1f7a4d;
-  --green-soft: #e6f4ec;
-  --gold: #d9a323;
-  --shadow: 0 1px 3px rgba(60, 30, 10, 0.08);
+  --text: #2a211c;
+  --muted: #74675d;
+  --border: #ecdcc6;
+  --input-bg: #fffdf8;
+  --shadow: 0 2px 10px rgba(80, 20, 10, 0.08);
+  --snow: rgba(179, 32, 42, 0.18);
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #17130f;
-    --card: #231d18;
-    --text: #f3ebe3;
-    --muted: #a99d93;
-    --border: #3a3029;
-    --red: #e0604f;
-    --red-dark: #c24a3a;
-    --green: #4fc28a;
-    --green-soft: #1d3428;
-    --shadow: none;
+    --red: #e0444e;
+    --red-dark: #c3313b;
+    --green: #0d3b20;
+    --green-mid: #4cbf7a;
+    --green-soft: #173726;
+    --gold: #e8b938;
+    --gold-soft: #3a2f12;
+    --gold-text: #f0c94d;
+
+    --bg: #0c1f14;
+    --card: #142d1e;
+    --text: #f6efe4;
+    --muted: #a9b9ad;
+    --border: #24442f;
+    --input-bg: #0f2618;
+    --shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+    --snow: rgba(255, 255, 255, 0.55);
     color-scheme: dark;
   }
 }
@@ -33,101 +47,207 @@
 
 body {
   margin: 0;
-  background: var(--bg);
+  min-height: 100vh;
   color: var(--text);
-  font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font: 16px/1.5 "Nunito", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background-color: var(--bg);
+  /* puntitos dorados muy sutiles, como papel de regalo */
+  background-image: radial-gradient(color-mix(in srgb, var(--gold) 22%, transparent) 1.2px, transparent 1.3px);
+  background-size: 26px 26px;
 }
 
 a { color: inherit; }
-h1 { font-size: 1.6rem; margin: 0.4rem 0 1rem; }
-h2 { font-size: 1.15rem; margin: 0 0 0.6rem; }
-h3 { font-size: 1.05rem; margin: 0; }
-
-.page { max-width: 760px; margin: 0 auto; padding: 0 16px 48px; }
-
-.top {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  padding: 14px 0; margin-bottom: 8px; border-bottom: 1px solid var(--border);
-  flex-wrap: wrap;
+h1, h2, h3 { margin: 0; }
+h1 {
+  font-family: "Mountains of Christmas", "Nunito", cursive;
+  font-size: 2.2rem; line-height: 1.15; color: var(--red); margin: 0.4rem 0 1rem;
 }
-.brand { font-weight: 700; text-decoration: none; font-size: 1.1rem; }
-.who { display: flex; gap: 10px; align-items: center; font-size: 0.95rem; }
+h2 { font-size: 1.2rem; margin-bottom: 0.6rem; font-weight: 800; }
+h3 { font-size: 1.05rem; font-weight: 800; }
 
+.page { position: relative; z-index: 1; max-width: 760px; margin: 0 auto; padding: 8px 16px 32px; }
+
+/* ===== Nieve ===== */
+.snow { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
+.snow span {
+  position: absolute; top: -2rem; color: var(--snow);
+  animation-name: fall; animation-timing-function: linear; animation-iteration-count: infinite;
+}
+@keyframes fall {
+  to { transform: translate(var(--drift, 0), 110vh) rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) { .snow { display: none; } }
+
+/* ===== Encabezado con guirnalda ===== */
+.top {
+  position: relative; z-index: 2;
+  background: linear-gradient(180deg, var(--green) 0%, #0f4424 100%);
+  color: #fff;
+  border-bottom: 4px solid var(--gold);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
+}
+.top-inner {
+  max-width: 760px; margin: 0 auto; padding: 14px 16px 22px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+}
+.brand {
+  font-family: "Mountains of Christmas", cursive; font-size: 1.7rem; line-height: 1;
+  text-decoration: none; color: #fff; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
+}
+.who { display: flex; gap: 10px; align-items: center; font-size: 0.95rem; }
+.top .link { color: var(--gold-soft); }
+@media (prefers-color-scheme: dark) { .top .link { color: var(--gold); } }
+
+.garland {
+  position: absolute; left: 0; right: 0; bottom: -12px; height: 18px;
+  display: flex; justify-content: space-around; padding: 0 8px; overflow: hidden;
+}
+.garland i {
+  width: 10px; height: 15px; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  background: var(--red); box-shadow: 0 0 8px 1px var(--red);
+  animation: twinkle 2.4s ease-in-out infinite;
+  position: relative;
+}
+.garland i::before {
+  content: ""; position: absolute; top: -3px; left: 2px; width: 6px; height: 4px;
+  background: #3b3b3b; border-radius: 2px;
+}
+.garland i:nth-child(4n + 2) { background: var(--gold); box-shadow: 0 0 8px 1px var(--gold); animation-delay: 0.6s; }
+.garland i:nth-child(4n + 3) { background: #2fa35a; box-shadow: 0 0 8px 1px #2fa35a; animation-delay: 1.2s; }
+.garland i:nth-child(4n) { background: #f4f1ea; box-shadow: 0 0 8px 1px #fff; animation-delay: 1.8s; }
+@keyframes twinkle { 50% { opacity: 0.35; box-shadow: none; } }
+@media (prefers-reduced-motion: reduce) { .garland i { animation: none; } }
+
+/* ===== Tarjetas ===== */
 .card {
-  background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+  position: relative;
+  background: var(--card); border: 1px solid var(--border); border-radius: 16px;
   padding: 16px; box-shadow: var(--shadow); margin-bottom: 12px;
 }
 
 .muted { color: var(--muted); }
 .small { font-size: 0.85rem; margin: 6px 0 0; }
-.error { color: var(--red); }
+.error { color: var(--red); font-weight: 600; }
 
+/* ===== Botones y formularios ===== */
 button {
-  font: inherit; cursor: pointer; border-radius: 10px; padding: 8px 14px;
-  border: 1px solid var(--border); background: var(--card); color: var(--text);
+  font: inherit; font-weight: 700; cursor: pointer; border-radius: 999px; padding: 8px 16px;
+  border: 1.5px solid var(--border); background: var(--card); color: var(--text);
+  transition: transform 0.1s, background 0.15s;
 }
+button:not(:disabled):active { transform: scale(0.97); }
 button:disabled { opacity: 0.5; cursor: default; }
-button.primary { background: var(--red); border-color: var(--red); color: #fff; font-weight: 600; }
+button.primary {
+  background: var(--red); border-color: var(--red); color: #fff;
+  box-shadow: 0 2px 0 var(--red-dark);
+}
 button.primary:not(:disabled):hover { background: var(--red-dark); }
-button.danger { color: var(--red); }
-button.link { border: none; background: none; padding: 4px; text-decoration: underline; color: var(--muted); }
+button.danger { color: var(--red); border-color: color-mix(in srgb, var(--red) 35%, var(--border)); }
+button.link {
+  border: none; background: none; padding: 4px; box-shadow: none;
+  text-decoration: underline; color: var(--muted); font-weight: 600;
+}
 
 input, textarea {
-  font: inherit; width: 100%; padding: 10px 12px; border-radius: 10px;
-  border: 1px solid var(--border); background: var(--bg); color: var(--text);
+  font: inherit; width: 100%; padding: 10px 14px; border-radius: 12px;
+  border: 1.5px solid var(--border); background: var(--input-bg); color: var(--text);
 }
+input:focus, textarea:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 30%, transparent); }
 textarea { resize: vertical; }
 
 .row { display: flex; gap: 8px; align-items: center; }
-.row.end { justify-content: flex-end; margin-top: 4px; }
+.row.end { justify-content: flex-end; margin-top: 4px; flex-wrap: wrap; }
 
-/* Entrada */
-.login { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
-.login-card { width: 100%; max-width: 420px; text-align: center; }
-.login-card .row input { flex: 1; }
-.big-emoji { font-size: 3rem; line-height: 1; margin-bottom: 6px; }
+/* ===== Entrada ===== */
+.login { position: relative; z-index: 1; min-height: 100vh; display: grid; place-items: center; padding: 16px; }
+.login-card {
+  width: 100%; max-width: 420px; text-align: center; padding: 32px 20px 24px;
+  border: 3px solid var(--gold);
+}
+.login-card .row input { flex: 1; min-width: 0; }
+.login-card p { margin: 10px 0; }
+.title { font-size: 2.6rem; margin: 4px 0 0; }
+.tagline { color: var(--green-mid); font-weight: 700; }
+.big-emoji { font-size: 3.2rem; line-height: 1; margin-bottom: 4px; }
 .names { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 8px; }
-.name-btn { background: var(--green-soft); border-color: transparent; font-weight: 600; }
+.name-btn { background: var(--green-soft); border-color: transparent; color: var(--green-mid); }
+@media (prefers-color-scheme: light) { .name-btn { color: var(--green); } }
+.name-btn:hover { background: var(--green-mid); color: #fff; }
 
-/* Inicio */
-.mine-card { display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
-.arrow { font-size: 2rem; color: var(--muted); }
-.section-title { margin-top: 24px; }
+/* ===== Inicio ===== */
+.mine-card {
+  display: flex; align-items: center; justify-content: space-between; cursor: pointer;
+  margin-top: 20px; border: 2px solid var(--red);
+  background: linear-gradient(135deg, var(--card) 70%, color-mix(in srgb, var(--red) 10%, var(--card)));
+}
+.mine-card > div { flex: 1; }
+.arrow { font-size: 2rem; color: var(--red); padding-left: 12px; }
+.section-title {
+  margin-top: 28px; color: var(--green-mid); display: flex; align-items: center; gap: 8px;
+}
+@media (prefers-color-scheme: light) { .section-title { color: var(--green); } }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
 .grid .card { margin: 0; }
-.person-card { text-decoration: none; display: flex; flex-direction: column; gap: 8px; }
-.person-card:hover, .mine-card:hover { border-color: var(--gold); }
-.plain-list { list-style: none; padding: 8px 16px; }
-.plain-list li { padding: 6px 0; border-bottom: 1px solid var(--border); }
+.person-card {
+  text-decoration: none; display: flex; flex-direction: column; gap: 10px;
+  border-top: 5px solid var(--green-mid);
+  transition: transform 0.15s, border-color 0.15s;
+}
+.grid .person-card:nth-child(even) { border-top-color: var(--red); }
+.person-card:hover, .mine-card:hover { transform: translateY(-2px); border-color: var(--gold); }
+.person-card h3::before { content: "🎁 "; }
+.plain-list { list-style: none; padding: 8px 16px; border-left: 5px solid var(--gold); }
+.plain-list li { padding: 8px 0; border-bottom: 1px dashed var(--border); }
 .plain-list li:last-child { border: none; }
 .plain-list a { text-decoration: none; }
 
+/* contador estilo bastón de caramelo */
 .counter { display: flex; flex-direction: column; gap: 6px; }
-.bar { height: 8px; background: var(--border); border-radius: 99px; overflow: hidden; }
-.bar div { height: 100%; background: var(--green); border-radius: 99px; transition: width 0.3s; }
+.counter b { color: var(--red); }
+.bar { height: 10px; background: var(--border); border-radius: 99px; overflow: hidden; }
+.bar div {
+  height: 100%; border-radius: 99px; transition: width 0.4s;
+  background: repeating-linear-gradient(-45deg, var(--red) 0 8px, #fff 8px 14px);
+}
 
-/* Listas */
-.back { display: inline-block; margin-top: 12px; text-decoration: none; color: var(--muted); }
+/* ===== Listas ===== */
+.back {
+  display: inline-block; margin-top: 18px; text-decoration: none; font-weight: 700; color: var(--green-mid);
+}
+@media (prefers-color-scheme: light) { .back { color: var(--green); } }
 .items { list-style: none; padding: 0; margin: 0; }
 .item { display: flex; gap: 12px; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; }
 .item-body { flex: 1 1 240px; min-width: 0; }
 .item-body p { margin: 4px 0 0; color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere; }
-.ext { display: inline-block; margin-top: 6px; font-size: 0.9rem; color: var(--green); }
+.ext { display: inline-block; margin-top: 6px; font-size: 0.9rem; font-weight: 700; color: var(--green-mid); }
 .actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .item-form { display: flex; flex-direction: column; gap: 8px; width: 100%; }
 
 .badge {
-  display: inline-block; padding: 4px 10px; border-radius: 99px; font-size: 0.9rem;
-  background: var(--green-soft); color: var(--green); font-weight: 600;
+  display: inline-block; padding: 4px 12px; border-radius: 99px; font-size: 0.9rem; font-weight: 800;
+  background: var(--green-soft); color: var(--green-mid);
 }
-.badge.mine { background: #fdf1d6; color: #8a6300; }
-@media (prefers-color-scheme: dark) { .badge.mine { background: #3a2f14; color: var(--gold); } }
-.is-gifted { border-left: 4px solid var(--green); }
+@media (prefers-color-scheme: light) { .badge { color: var(--green); } }
+.badge.mine { background: var(--gold-soft); color: var(--gold-text); }
+.is-gifted { border-left: 5px solid var(--green-mid); }
 
-/* Modal */
+/* ===== Modal ===== */
 .backdrop {
-  position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45);
+  position: fixed; inset: 0; background: rgba(10, 30, 18, 0.55);
   display: grid; place-items: center; padding: 16px; z-index: 10;
+  animation: fade 0.15s ease-out;
 }
-.modal { width: 100%; max-width: 400px; text-align: center; margin: 0; }
+.modal {
+  width: 100%; max-width: 400px; text-align: center; margin: 0;
+  border: 3px solid var(--gold); animation: pop 0.2s ease-out;
+}
+.modal h2 { font-family: "Mountains of Christmas", cursive; font-size: 1.9rem; color: var(--red); }
 .modal p { margin: 6px 0; }
+@keyframes fade { from { opacity: 0; } }
+@keyframes pop { from { transform: scale(0.9); opacity: 0; } }
+
+/* ===== Pie ===== */
+.foot {
+  position: relative; z-index: 1; text-align: center; padding: 8px 16px 28px;
+  font-family: "Mountains of Christmas", cursive; font-size: 1.4rem; color: var(--red);
+}
