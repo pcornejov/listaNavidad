@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import type { Context } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
-import type { MyGift, OtherItem, OwnItem, Person } from "../shared/types";
+import type { MyGift, OtherItem, Person } from "../shared/types";
 
 type Env = { DB: D1Database };
 type Ctx = Context<{ Bindings: Env }>;
@@ -31,6 +31,36 @@ async function currentPerson(c: Ctx): Promise<number | null> {
   const row = await c.env.DB.prepare("SELECT id FROM people WHERE id = ?").bind(id).first();
   return row ? id : null;
 }
+
+const MAX_LINKS = 10;
+
+/** Limpia la lista de links que manda el formulario (acepta también el antiguo campo "link"). */
+function cleanLinks(body: { links?: unknown; link?: unknown }): string[] {
+  const raw = Array.isArray(body.links) ? body.links : [body.link];
+  const seen = new Set<string>();
+  return raw
+    .map((l) => clean(l, 500))
+    .filter((l) => l && !seen.has(l) && seen.add(l))
+    .slice(0, MAX_LINKS);
+}
+
+type ItemRow = { id: number; title: string; description: string; link: string; links: string | null };
+
+/** Fila de la base -> artículo para la interfaz (con respaldo al link antiguo). */
+function toItem<T extends ItemRow>(r: T) {
+  let links: string[] = [];
+  try {
+    const parsed = JSON.parse(r.links ?? "[]");
+    if (Array.isArray(parsed)) links = parsed.filter((l) => typeof l === "string" && l);
+  } catch {
+    /* columna dañada: se ignora */
+  }
+  if (links.length === 0 && r.link) links = [r.link];
+  const { link: _old, links: _raw, ...rest } = r;
+  return { ...rest, links };
+}
+
+const ITEM_COLS = "id, title, description, link, links";
 
 // ---------- Personas ----------
 
@@ -116,15 +146,15 @@ app.get("/people/:id/items", async (c) => {
 
   if (ownerId === me) {
     const { results } = await c.env.DB.prepare(
-      "SELECT id, title, description, link FROM items WHERE owner_id = ? ORDER BY id"
+      `SELECT ${ITEM_COLS} FROM items WHERE owner_id = ? ORDER BY id`
     )
       .bind(ownerId)
-      .all<OwnItem>();
-    return c.json({ owner, items: results });
+      .all<ItemRow>();
+    return c.json({ owner, items: results.map(toItem) });
   }
 
   const { results } = await c.env.DB.prepare(
-    `SELECT i.id, i.title, i.description, i.link,
+    `SELECT i.id, i.title, i.description, i.link, i.links,
             EXISTS (SELECT 1 FROM gifts g WHERE g.item_id = i.id) AS gifted,
             EXISTS (SELECT 1 FROM gifts g WHERE g.item_id = i.id AND g.giver_id = ?) AS byMe
        FROM items i
@@ -132,8 +162,12 @@ app.get("/people/:id/items", async (c) => {
       ORDER BY i.id`
   )
     .bind(me, ownerId)
-    .all<OtherItem>();
-  const items = results.map((r) => ({ ...r, gifted: !!r.gifted, byMe: !!r.byMe }));
+    .all<ItemRow & { gifted: number; byMe: number }>();
+  const items: OtherItem[] = results.map((r) => ({
+    ...toItem(r),
+    gifted: !!r.gifted,
+    byMe: !!r.byMe,
+  }));
   return c.json({ owner, items });
 });
 
@@ -145,12 +179,14 @@ app.post("/items", async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const title = clean(body.title, 120);
   if (!title) return c.json({ error: "El regalo necesita un nombre" }, 400);
-  const item = await c.env.DB.prepare(
-    "INSERT INTO items (owner_id, title, description, link) VALUES (?, ?, ?, ?) RETURNING id, title, description, link"
+  const links = cleanLinks(body);
+  const row = await c.env.DB.prepare(
+    `INSERT INTO items (owner_id, title, description, link, links) VALUES (?, ?, ?, ?, ?)
+     RETURNING ${ITEM_COLS}`
   )
-    .bind(me, title, clean(body.description, 500), clean(body.link, 500))
-    .first<OwnItem>();
-  return c.json(item, 201);
+    .bind(me, title, clean(body.description, 500), links[0] ?? "", JSON.stringify(links))
+    .first<ItemRow>();
+  return c.json(row && toItem(row), 201);
 });
 
 /** Agrega varios regalos de una vez (p. ej. una lista pegada desde las notas del teléfono). */
@@ -174,15 +210,23 @@ app.put("/items/:id", async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const title = clean(body.title, 120);
   if (!title) return c.json({ error: "El regalo necesita un nombre" }, 400);
-  const item = await c.env.DB.prepare(
-    `UPDATE items SET title = ?, description = ?, link = ?
+  const links = cleanLinks(body);
+  const row = await c.env.DB.prepare(
+    `UPDATE items SET title = ?, description = ?, link = ?, links = ?
       WHERE id = ? AND owner_id = ?
-      RETURNING id, title, description, link`
+      RETURNING ${ITEM_COLS}`
   )
-    .bind(title, clean(body.description, 500), clean(body.link, 500), Number(c.req.param("id")), me)
-    .first<OwnItem>();
-  if (!item) return c.json({ error: "No puedes editar ese regalo" }, 404);
-  return c.json(item);
+    .bind(
+      title,
+      clean(body.description, 500),
+      links[0] ?? "",
+      JSON.stringify(links),
+      Number(c.req.param("id")),
+      me
+    )
+    .first<ItemRow>();
+  if (!row) return c.json({ error: "No puedes editar ese regalo" }, 404);
+  return c.json(toItem(row));
 });
 
 app.delete("/items/:id", async (c) => {

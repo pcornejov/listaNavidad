@@ -43,7 +43,7 @@ async function req<T>(path: string, init: RequestInit = {}): Promise<T> {
 export interface ItemInput {
   title: string;
   description: string;
-  link: string;
+  links: string[];
 }
 
 export const api = {

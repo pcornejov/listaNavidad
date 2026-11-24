@@ -283,7 +283,19 @@ function Home({ me }: { me: Me }) {
 
 // ---------- Mi lista (el dueño no ve qué le regalaron) ----------
 
-const emptyItem: ItemInput = { title: "", description: "", link: "" };
+const emptyItem: ItemInput = { title: "", description: "", links: [] };
+const MAX_LINKS = 10;
+
+const toHref = (l: string) => (/^https?:\/\//i.test(l) ? l : `https://${l}`);
+
+/** "https://www.falabella.com/..." -> "falabella.com" */
+function linkLabel(l: string) {
+  try {
+    return new URL(toHref(l)).hostname.replace(/^www\./, "");
+  } catch {
+    return "Ver ejemplo";
+  }
+}
 
 function ItemForm({
   initial,
@@ -296,17 +308,29 @@ function ItemForm({
   onSubmit: (i: ItemInput) => Promise<void>;
   onCancel?: () => void;
 }) {
-  const [v, setV] = useState(initial);
+  // Siempre mostramos al menos una casilla de link vacía.
+  const [v, setV] = useState<ItemInput>({
+    ...initial,
+    links: initial.links.length ? initial.links : [""],
+  });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+
+  const setLink = (i: number, val: string) =>
+    setV({ ...v, links: v.links.map((l, j) => (j === i ? val : l)) });
+  const addLink = () => setV({ ...v, links: [...v.links, ""] });
+  const removeLink = (i: number) => {
+    const links = v.links.filter((_, j) => j !== i);
+    setV({ ...v, links: links.length ? links : [""] });
+  };
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setBusy(true);
     setError("");
     try {
-      await onSubmit(v);
-      setV(emptyItem);
+      await onSubmit({ ...v, links: v.links.map((l) => l.trim()).filter(Boolean) });
+      setV({ ...emptyItem, links: [""] });
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -330,13 +354,36 @@ function ItemForm({
         maxLength={500}
         rows={2}
       />
-      <input
-        value={v.link}
-        onChange={(e) => setV({ ...v, link: e.target.value })}
-        placeholder="Link de ejemplo (opcional)"
-        maxLength={500}
-        inputMode="url"
-      />
+      <div className="links-edit">
+        {v.links.map((l, i) => (
+          <div key={i} className="row">
+            <input
+              value={l}
+              onChange={(e) => setLink(i, e.target.value)}
+              placeholder={i === 0 ? "Link de ejemplo (opcional)" : "Otro link de ejemplo"}
+              maxLength={500}
+              inputMode="url"
+              autoCapitalize="off"
+              autoCorrect="off"
+            />
+            {(v.links.length > 1 || l) && (
+              <button
+                type="button"
+                className="icon-btn"
+                aria-label="Quitar link"
+                onClick={() => removeLink(i)}
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        ))}
+        {v.links.length < MAX_LINKS && v.links[v.links.length - 1]?.trim() && (
+          <button type="button" className="link add-link" onClick={addLink}>
+            + Agregar otro link
+          </button>
+        )}
+      </div>
       <div className="row end">
         {onCancel && (
           <button type="button" onClick={onCancel}>
@@ -353,15 +400,18 @@ function ItemForm({
 }
 
 function ItemBody({ item }: { item: OwnItem }) {
-  const href = item.link && (/^https?:\/\//i.test(item.link) ? item.link : `https://${item.link}`);
   return (
     <div className="item-body">
       <h3>{item.title}</h3>
       {item.description && <p>{item.description}</p>}
-      {href && (
-        <a href={href} target="_blank" rel="noopener noreferrer" className="ext">
-          Ver ejemplo ↗
-        </a>
+      {item.links.length > 0 && (
+        <div className="ext-links">
+          {item.links.map((l, i) => (
+            <a key={i} href={toHref(l)} target="_blank" rel="noopener noreferrer" className="ext">
+              🔗 {linkLabel(l)} ↗
+            </a>
+          ))}
+        </div>
       )}
     </div>
   );

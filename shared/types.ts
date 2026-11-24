@@ -10,7 +10,7 @@ export interface OwnItem {
   id: number;
   title: string;
   description: string;
-  link: string;
+  links: string[];
 }
 
 /** Artículo visto por otro familiar. */

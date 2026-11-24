@@ -266,3 +266,14 @@ textarea { resize: vertical; }
 .paste-preview input { width: 20px; height: 20px; flex: none; margin-top: 2px; accent-color: var(--red); }
 .paste-preview input:not(:checked) + span { color: var(--muted); text-decoration: line-through; }
 .ok { color: var(--green-mid); font-weight: 700; }
+
+/* ===== Varios links por regalo ===== */
+.links-edit { display: flex; flex-direction: column; gap: 6px; }
+.links-edit .row input { flex: 1; min-width: 0; }
+.icon-btn { padding: 6px 12px; flex: none; color: var(--muted); }
+.add-link { align-self: flex-start; color: var(--green-mid); }
+.ext-links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.ext-links .ext {
+  margin: 0; padding: 4px 10px; border-radius: 99px; text-decoration: none;
+  background: var(--green-soft); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
