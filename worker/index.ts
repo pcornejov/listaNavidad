@@ -33,18 +33,30 @@ app.get("/people", async (c) => {
   return c.json(results);
 });
 
-/** Entra con un nombre: si ya existe lo reutiliza, si no lo crea. */
+/** Normaliza un nombre para compararlo: "  JOSÉ  Pérez" -> "jose perez". */
+const nameKey = (name: string) =>
+  name.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/\s+/g, " ").trim();
+
+/** "pablo" -> "Pablo" (solo si el nombre viene todo en minúsculas). */
+const prettyName = (name: string) =>
+  name === name.toLowerCase() ? name.replace(/(^|\s)(\p{L})/gu, (m) => m.toUpperCase()) : name;
+
+/** Entra con un nombre: si ya existe (sin importar mayúsculas ni tildes) lo reutiliza, si no lo crea. */
 app.post("/people", async (c) => {
   const body = await c.req.json().catch(() => ({}));
-  const name = clean(body.name, 40);
+  const name = clean(body.name, 40).replace(/\s+/g, " ");
   if (!name) return c.json({ error: "Escribe tu nombre" }, 400);
-  await c.env.DB.prepare("INSERT INTO people (name) VALUES (?) ON CONFLICT(name) DO NOTHING")
-    .bind(name)
+  const key = nameKey(name);
+  const find = () =>
+    c.env.DB.prepare("SELECT id, name FROM people WHERE name_key = ?")
+      .bind(key)
+      .first<{ id: number; name: string }>();
+  const existing = await find();
+  if (existing) return c.json(existing);
+  await c.env.DB.prepare("INSERT INTO people (name, name_key) VALUES (?, ?) ON CONFLICT DO NOTHING")
+    .bind(prettyName(name), key)
     .run();
-  const person = await c.env.DB.prepare("SELECT id, name FROM people WHERE name = ?")
-    .bind(name)
-    .first<{ id: number; name: string }>();
-  return c.json(person);
+  return c.json(await find());
 });
 
 /** Lista de una persona. Si la mira el dueño, no se incluye nada sobre regalos. */
