@@ -153,6 +153,21 @@ app.post("/items", async (c) => {
   return c.json(item, 201);
 });
 
+/** Agrega varios regalos de una vez (p. ej. una lista pegada desde las notas del teléfono). */
+app.post("/items/bulk", async (c) => {
+  const me = await currentPerson(c);
+  if (!me) return c.json({ error: "Primero elige tu nombre" }, 401);
+  const body = await c.req.json().catch(() => ({}));
+  const titles: string[] = (Array.isArray(body.titles) ? body.titles : [])
+    .map((t: unknown) => clean(t, 120))
+    .filter(Boolean)
+    .slice(0, 100);
+  if (titles.length === 0) return c.json({ error: "No hay regalos para agregar" }, 400);
+  const stmt = c.env.DB.prepare("INSERT INTO items (owner_id, title) VALUES (?, ?)");
+  await c.env.DB.batch(titles.map((t) => stmt.bind(me, t)));
+  return c.json({ added: titles.length }, 201);
+});
+
 app.put("/items/:id", async (c) => {
   const me = await currentPerson(c);
   if (!me) return c.json({ error: "Primero elige tu nombre" }, 401);

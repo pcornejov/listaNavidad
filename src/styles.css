@@ -251,3 +251,18 @@ textarea { resize: vertical; }
   position: relative; z-index: 1; text-align: center; padding: 8px 16px 28px;
   font-family: "Mountains of Christmas", cursive; font-size: 1.4rem; color: var(--red);
 }
+
+/* ===== Pegar una lista ===== */
+.tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+.tabs button { flex: 1; font-size: 0.95rem; padding: 8px 10px; }
+.tabs button[aria-selected="true"] { background: var(--green-mid); border-color: var(--green-mid); color: #fff; }
+.paste-preview {
+  list-style: none; margin: 0; padding: 4px 12px; max-height: 320px; overflow-y: auto;
+  border: 1.5px dashed var(--border); border-radius: 12px; background: var(--input-bg);
+}
+.paste-preview li { border-bottom: 1px dashed var(--border); }
+.paste-preview li:last-child { border: none; }
+.paste-preview label { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; cursor: pointer; }
+.paste-preview input { width: 20px; height: 20px; flex: none; margin-top: 2px; accent-color: var(--red); }
+.paste-preview input:not(:checked) + span { color: var(--muted); text-decoration: line-through; }
+.ok { color: var(--green-mid); font-weight: 700; }

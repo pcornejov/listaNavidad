@@ -54,6 +54,8 @@ export const api = {
   ownList: (id: number) => req<{ owner: Me; items: OwnItem[] }>(`/people/${id}/items`),
   otherList: (id: number) => req<{ owner: Me; items: OtherItem[] }>(`/people/${id}/items`),
   addItem: (i: ItemInput) => req<OwnItem>("/items", { method: "POST", body: JSON.stringify(i) }),
+  addMany: (titles: string[]) =>
+    req<{ added: number }>("/items/bulk", { method: "POST", body: JSON.stringify({ titles }) }),
   editItem: (id: number, i: ItemInput) =>
     req<OwnItem>(`/items/${id}`, { method: "PUT", body: JSON.stringify(i) }),
   deleteItem: (id: number) => req(`/items/${id}`, { method: "DELETE" }),

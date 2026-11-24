@@ -367,10 +367,110 @@ function ItemBody({ item }: { item: OwnItem }) {
   );
 }
 
+/** Convierte un texto pegado en una lista de regalos: una línea = un regalo. */
+function parseList(text: string) {
+  const seen = new Set<string>();
+  return text
+    .split(/\r?\n/)
+    .map((l) =>
+      l
+        .replace(/^\s*(?:[-*•·–—▪●○◦✓✔☐☑]|\d{1,3}[.)-])\s*/u, "") // viñetas y numeración
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 120)
+    )
+    .filter((l) => {
+      const k = l.toLowerCase();
+      if (!l || seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+}
+
+/** Títulos tipo "Lista de regalos posibles" o "Ideas:" vienen desmarcados. */
+const looksLikeHeader = (l: string) => /^(mi\s+)?lista\b|^ideas\b|:$/i.test(l);
+
+function PasteList({ onDone }: { onDone: () => void }) {
+  const [text, setText] = useState("");
+  const [skip, setSkip] = useState<Set<string>>(new Set());
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [done, setDone] = useState(0);
+
+  const lines = parseList(text);
+  const chosen = lines.filter((l) => !skip.has(l));
+
+  const onText = (t: string) => {
+    setText(t);
+    setDone(0);
+    setSkip(new Set(parseList(t).filter(looksLikeHeader)));
+  };
+  const toggle = (l: string) => {
+    const next = new Set(skip);
+    if (next.has(l)) next.delete(l);
+    else next.add(l);
+    setSkip(next);
+  };
+  const submit = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      const r = await api.addMany(chosen);
+      setDone(r.added);
+      setText("");
+      setSkip(new Set());
+      onDone();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="item-form">
+      <p className="muted small">
+        Copia tu lista desde las notas del teléfono y pégala aquí. Cada línea será un regalo.
+      </p>
+      <textarea
+        value={text}
+        onChange={(e) => onText(e.target.value)}
+        placeholder={"Bloqueador solar\nCrema contorno de ojos\nLibro…"}
+        rows={6}
+      />
+      {lines.length > 0 && (
+        <>
+          <p className="small">
+            <b>{chosen.length}</b> de {lines.length} se agregarán. Desmarca las que no son regalos:
+          </p>
+          <ul className="paste-preview">
+            {lines.map((l) => (
+              <li key={l}>
+                <label>
+                  <input type="checkbox" checked={!skip.has(l)} onChange={() => toggle(l)} />
+                  <span>{l}</span>
+                </label>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      <div className="row end">
+        <button className="primary" onClick={submit} disabled={busy || chosen.length === 0}>
+          {chosen.length > 0 ? `Agregar ${chosen.length} regalo${chosen.length === 1 ? "" : "s"}` : "Agregar"}
+        </button>
+      </div>
+      {done > 0 && <p className="ok">🎉 ¡Listo! Se agregaron {done} regalos a tu lista.</p>}
+      {error && <p className="error">{error}</p>}
+    </div>
+  );
+}
+
 function MyList({ me }: { me: Me }) {
   const [items, setItems] = useState<OwnItem[] | null>(null);
   const [count, setCount] = useState<Person | undefined>();
   const [editing, setEditing] = useState<number | null>(null);
+  const [mode, setMode] = useState<"one" | "paste">("one");
 
   const load = useCallback(() => {
     api.ownList(me.id).then((r) => setItems(r.items)).catch(() => {});
@@ -406,8 +506,20 @@ function MyList({ me }: { me: Me }) {
       </div>
 
       <div className="card">
-        <h2>Agregar un regalo</h2>
-        <ItemForm initial={emptyItem} submitLabel="Agregar" onSubmit={add} />
+        <h2>Agregar regalos</h2>
+        <div className="tabs" role="tablist">
+          <button role="tab" aria-selected={mode === "one"} onClick={() => setMode("one")}>
+            ✏️ Uno por uno
+          </button>
+          <button role="tab" aria-selected={mode === "paste"} onClick={() => setMode("paste")}>
+            📋 Pegar una lista
+          </button>
+        </div>
+        {mode === "one" ? (
+          <ItemForm initial={emptyItem} submitLabel="Agregar" onSubmit={add} />
+        ) : (
+          <PasteList onDone={load} />
+        )}
       </div>
 
       {items === null && <p className="muted">Cargando…</p>}
